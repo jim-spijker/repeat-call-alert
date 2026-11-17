@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Repeat Call Alert</string>
+    <string name="channel_name">Repeat call alert</string>
+    <string name="channel_description">Shown while a repeated call is ringing through silent mode</string>
+    <string name="notification_title">Repeated call</string>
+    <string name="notification_title_test">Test alert</string>
+    <string name="notification_text">Ringing through silent mode</string>
+    <string name="notification_stop">Stop</string>
+</resources>
