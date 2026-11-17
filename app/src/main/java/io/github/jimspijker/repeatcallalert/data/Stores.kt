@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
+import java.security.SecureRandom
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 private val Context.stateStore: DataStore<Preferences> by preferencesDataStore(name = "state")
@@ -49,15 +50,20 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAlarmVolumePercent(v: Int) = context.settingsStore.edit { it[K.volume] = v.coerceIn(10, 100) }
 }
 
-/** Call history: only a salted SHA-256 hash per number plus timestamps — never the number itself. */
+/**
+ * Call history: only a salted SHA-256 hash per number plus timestamps — never the number itself.
+ * The salt is random per installation, so hashes can't be matched against a precomputed table of numbers.
+ */
 class CallHistoryStore(private val context: Context) {
     private val key = stringPreferencesKey("call_history")
+    private val saltKey = stringPreferencesKey("hash_salt")
 
     suspend fun registerCall(numberKey: String, now: Long, windowMs: Long, minCalls: Int): RepeatCallDetector.Decision {
         var decision: RepeatCallDetector.Decision? = null
         context.stateStore.edit { p ->
+            val salt = p[saltKey] ?: newSalt().also { p[saltKey] = it }
             val all = CallHistoryCodec.prune(CallHistoryCodec.decode(p[key]), now, MAX_AGE_MS).toMutableMap()
-            val hashed = hash(numberKey)
+            val hashed = hash(salt, numberKey)
             val d = RepeatCallDetector.register(all[hashed].orEmpty(), now, windowMs, minCalls)
             all[hashed] = d.updatedHistory
             p[key] = CallHistoryCodec.encode(all)
@@ -70,9 +76,14 @@ class CallHistoryStore(private val context: Context) {
         /** Longest configurable window (30 min) plus margin; anything older is deleted. */
         const val MAX_AGE_MS = 35 * 60_000L
 
-        fun hash(s: String): String {
-            val md = MessageDigest.getInstance("SHA-256").digest(("repeatcallalert:" + s).toByteArray())
-            return md.joinToString("") { "%02x".format(it) }.take(32)
+        fun hash(salt: String, s: String): String {
+            val md = MessageDigest.getInstance("SHA-256").digest("$salt:$s".toByteArray())
+            return md.joinToString("") { "%02x".format(it) }
+        }
+
+        private fun newSalt(): String {
+            val bytes = ByteArray(16).also { SecureRandom().nextBytes(it) }
+            return bytes.joinToString("") { "%02x".format(it) }
         }
     }
 }

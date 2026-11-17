@@ -16,7 +16,7 @@ physical Alert Slider's silent mode overrides it. This app fills that gap.
 - Plays **your own ringtone**. It stops the moment you answer or decline, or when the caller hangs up (60 s at most)
 - Raises the alarm volume to a minimum you choose for that call, then restores it
 - **Never blocks or rejects calls**: it only listens
-- **Private**: no internet permission, no analytics, no account. Numbers are stored only as hashes, on your phone, for 35 minutes at most
+- **Private**: no internet permission, no analytics, no account. Numbers are stored only as salted hashes, on your phone, for 35 minutes at most. See [SECURITY.md](SECURITY.md)
 - Free and open source (MIT)
 
 ## Installation guide

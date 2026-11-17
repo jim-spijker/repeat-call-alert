@@ -1,6 +1,7 @@
 package io.github.jimspijker.repeatcallalert.data
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,8 @@ object ActivityLog {
     }
 
     fun log(ctx: Context, message: String) {
-        Log.i(TAG, message)
+        // Logcat only in debuggable builds; release builds keep the log inside the app's private storage.
+        if (ctx.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) Log.i(TAG, message)
         synchronized(lock) {
             if (!loaded) load(ctx)
             val ts = SimpleDateFormat("MMM d HH:mm:ss", Locale.ENGLISH).format(Date())
