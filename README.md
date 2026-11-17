@@ -87,7 +87,20 @@ audio focus. Silent mode never mutes alarms, so the alarm channel reliably makes
 |---|---|---|
 | OnePlus 12 (CPH2581) | Android 16, OxygenOS 16.0.10 | Second call audible with Alert Slider on silent; stops on answer and on hang-up |
 
-Tried it on another phone? Please open an issue with your device and result.
+Tried it on another phone? Please [share your result](../../issues/new?template=device_report.md), whether it worked or not.
+
+## Ideas and feature requests welcome 💡
+
+This app started as a fix for one person's problem, and it can grow into whatever is useful for you.
+**Feel free to ask for features.** For example: always letting certain contacts ring, quiet hours, vibration, a different
+sound, or support for your phone model. Nothing is too small.
+
+- 👉 **[Suggest a feature](../../issues/new?template=feature_request.md)**
+- 🐞 **[Report a problem](../../issues/new?template=bug_report.md)**
+- 💬 Or just open an [issue](../../issues) with a question
+
+You don't need to know how to code. Describe what you'd like to happen, and I'll see what's possible.
+Pull requests are welcome too.
 
 ## Build from source
 

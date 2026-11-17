@@ -100,6 +100,7 @@ fun MainScreen(settings: SettingsRepository, setup: SetupStatus, actions: SetupA
             TestCard(actions)
             HowItWorksCard()
             ActivityCard()
+            FeedbackCard(actions)
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -253,6 +254,23 @@ private fun TestCard(actions: SetupActions) {
             Button(onClick = actions.testAlert) { Text("Play test alert") }
             OutlinedButton(onClick = actions.stopAlert) { Text("Stop") }
         }
+    }
+}
+
+private const val REPO_URL = "https://github.com/jim-spijker/repeat-call-alert"
+
+@Composable
+private fun FeedbackCard(actions: SetupActions) {
+    SectionCard("Ideas welcome") {
+        Text(
+            "Missing something? Feel free to ask for a feature, like always letting certain contacts ring, quiet hours or support for your phone. No coding needed. Just describe what you'd like.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = { actions.openUrl("$REPO_URL/issues/new?template=feature_request.md") }) { Text("Suggest a feature") }
+            OutlinedButton(onClick = { actions.openUrl("$REPO_URL/issues/new?template=bug_report.md") }) { Text("Report a problem") }
+        }
+        TextButton(onClick = { actions.openUrl(REPO_URL) }) { Text("View on GitHub") }
     }
 }
 

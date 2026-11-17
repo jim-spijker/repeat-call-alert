@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
                             lifecycleScope.launch { AlertService.start(this@MainActivity, settings.current().alarmVolumePercent, isTest = true) }
                         },
                         stopAlert = { lifecycleScope.launch { AlertService.stop(this@MainActivity, "stopped in app") } },
+                        openUrl = { url -> open(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
                     ),
                 )
             }
@@ -114,4 +115,5 @@ class SetupActions(
     val openAppInfo: () -> Unit,
     val testAlert: () -> Unit,
     val stopAlert: () -> Unit,
+    val openUrl: (String) -> Unit,
 )
