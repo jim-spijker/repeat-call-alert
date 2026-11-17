@@ -41,6 +41,15 @@ class AlertPolicyTest {
         assertNull(AlertPolicy.volumeToRestore(original = null, applied = null, current = 3))
     }
 
+    @Test fun unrestoredEarlierRaiseKeepsRealOriginal() {
+        assertEquals(12, AlertPolicy.originalVolume(storedOriginal = 12, storedApplied = 13, current = 13))
+    }
+
+    @Test fun originalIsCurrentWhenNothingStoredOrUserChangedVolume() {
+        assertEquals(9, AlertPolicy.originalVolume(storedOriginal = null, storedApplied = null, current = 9))
+        assertEquals(7, AlertPolicy.originalVolume(storedOriginal = 12, storedApplied = 13, current = 7))
+    }
+
     @Test fun targetVolumeRoundsUpAndClamps() {
         assertEquals(13, AlertPolicy.targetVolumeIndex(80, 1, 16)) // 12.8 → 13
         assertEquals(16, AlertPolicy.targetVolumeIndex(100, 1, 16))

@@ -24,6 +24,8 @@ import io.github.jimspijker.repeatcallalert.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -98,12 +100,16 @@ class AlertService : Service() {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
 
-        // Raise the alarm volume to the configured minimum and remember the original value
-        val original = am.getStreamVolume(stream)
+        // Raise the alarm volume to the configured minimum and remember the original value.
+        // If an earlier raise was never restored (e.g. the process was killed), keep that earlier original.
+        val store = AlarmVolumeStore(this)
+        val current = am.getStreamVolume(stream)
+        val previous = store.get()
+        val original = AlertPolicy.originalVolume(previous?.originalVolume, previous?.appliedVolume, current)
         val target = AlertPolicy.targetVolumeIndex(volumePercent, am.getStreamMinVolume(stream), am.getStreamMaxVolume(stream))
-        if (original < target) runCatching { am.setStreamVolume(stream, target, 0) }
+        if (current < target) runCatching { am.setStreamVolume(stream, target, 0) }
         val applied = am.getStreamVolume(stream)
-        if (applied != original) AlarmVolumeStore(this).save(AlarmVolumeStore.State(original, applied))
+        if (applied != original) store.save(AlarmVolumeStore.State(original, applied)) else store.clear()
 
         val focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).setAudioAttributes(attrs).build()
         focusRequest = focus
@@ -133,7 +139,8 @@ class AlertService : Service() {
         )
         timeoutJob = scope.launch {
             delay(maxMs)
-            stopAlert("time limit reached")
+            // Stop from a separate coroutine: stopAlert() cancels timeoutJob, which must not be the caller itself.
+            scope.launch { stopAlert("time limit reached") }
         }
     }
 
@@ -141,16 +148,21 @@ class AlertService : Service() {
         if (stopping) return
         stopping = true
         timeoutJob?.cancel()
+        timeoutJob = null
         val wasPlaying = player != null
-        runCatching { player?.stop() }
-        runCatching { player?.release() }
-        player = null
-        focusRequest?.let { getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it) }
-        restoreVolume(this)
-        if (wasPlaying) ActivityLog.log(this, "Stopped ringing ($reason).")
-        running = false
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        try {
+            runCatching { player?.stop() }
+            runCatching { player?.release() }
+            player = null
+            focusRequest?.let { getSystemService(AudioManager::class.java).abandonAudioFocusRequest(it) }
+            // Restoring must finish even if this coroutine is being cancelled.
+            withContext(NonCancellable) { runCatching { restoreVolume(this@AlertService) } }
+            if (wasPlaying) ActivityLog.log(this, "Stopped ringing ($reason).")
+        } finally {
+            running = false
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
     }
 
     override fun onDestroy() {

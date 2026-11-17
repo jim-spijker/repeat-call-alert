@@ -22,6 +22,13 @@ object AlertPolicy {
     }
 
     /**
+     * The volume to remember as "original" before raising. If an earlier raise was never restored and the
+     * volume is still what we set then, the earlier original is kept so the user's real volume isn't lost.
+     */
+    fun originalVolume(storedOriginal: Int?, storedApplied: Int?, current: Int): Int =
+        if (storedOriginal != null && storedApplied == current) storedOriginal else current
+
+    /**
      * Volume to restore after a temporary raise, or `null` when there is nothing to restore or the user
      * changed the volume in the meantime (their choice always wins).
      */
