@@ -56,6 +56,9 @@ import androidx.compose.ui.unit.sp
 import io.github.jimspijker.repeatcallalert.data.ActivityLog
 import io.github.jimspijker.repeatcallalert.data.AppSettings
 import io.github.jimspijker.repeatcallalert.data.SettingsRepository
+import io.github.jimspijker.repeatcallalert.logic.CallerRules
+import io.github.jimspijker.repeatcallalert.logic.FirstCallFrom
+import io.github.jimspijker.repeatcallalert.logic.RepeatFrom
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -96,6 +99,7 @@ fun MainScreen(settings: SettingsRepository, setup: SetupStatus, actions: SetupA
                 SetupCard(setup, actions)
             }
 
+            CallersCard(s, settings, setup, actions)
             SettingsCard(s, settings)
             TestCard(actions)
             HowItWorksCard()
@@ -162,7 +166,7 @@ private fun SetupCard(setup: SetupStatus, actions: SetupActions) {
         )
         SetupStep(
             4, "Recognise saved contacts (recommended)",
-            "Without this, Android only reports calls from numbers that are not in your contacts.",
+            "Needed for favourites. Without it, Android only reports calls from numbers that are not in your contacts.",
             setup.contacts, "Allow", actions.requestContacts,
         )
         SetupStep(
@@ -196,6 +200,69 @@ private fun SetupStep(number: Int, title: String, body: String, done: Boolean, b
             Spacer(Modifier.width(8.dp))
             FilledTonalButton(onClick = onClick) { Text(button) }
         }
+    }
+}
+
+@Composable
+private fun CallersCard(s: AppSettings, settings: SettingsRepository, setup: SetupStatus, actions: SetupActions) {
+    val scope = rememberCoroutineScope()
+    SectionCard("Who can ring through") {
+        Text("Ring right away for", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            "These callers ring on their first call, like favourites in Do Not Disturb.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val firstOptions = listOf(FirstCallFrom.NOBODY to "Nobody", FirstCallFrom.STARRED to "Starred", FirstCallFrom.CONTACTS to "Contacts")
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            firstOptions.forEachIndexed { i, (value, label) ->
+                SegmentedButton(
+                    selected = s.firstCallFrom == value,
+                    onClick = { scope.launch { settings.setFirstCallFrom(value) } },
+                    shape = SegmentedButtonDefaults.itemShape(i, firstOptions.size),
+                ) { Text(label) }
+            }
+        }
+
+        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+
+        Text("Repeated calls from", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            "Whose repeated calls ring through. Set how many calls count as repeated under Settings.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        val repeatOptions = listOf(RepeatFrom.ANYONE to "Anyone", RepeatFrom.CONTACTS to "Contacts", RepeatFrom.STARRED to "Starred")
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            repeatOptions.forEachIndexed { i, (value, label) ->
+                SegmentedButton(
+                    selected = s.repeatFrom == value,
+                    onClick = { scope.launch { settings.setRepeatFrom(value) } },
+                    shape = SegmentedButtonDefaults.itemShape(i, repeatOptions.size),
+                ) { Text(label) }
+            }
+        }
+
+        val usesContacts = CallerRules.needsContactLookup(s.firstCallFrom, s.repeatFrom)
+        if (usesContacts && !setup.contacts) {
+            Card(
+                Modifier.fillMaxWidth().padding(top = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            ) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Needs access to your contacts to recognise them.",
+                        Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                    FilledTonalButton(onClick = actions.requestContacts) { Text("Allow") }
+                }
+            }
+        }
+        Text(
+            "\"Starred\" means the contacts you marked as favourite (star) in your Contacts or Phone app.",
+            Modifier.padding(top = 12.dp),
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TextButton(onClick = actions.openContacts) { Text("Manage favourites") }
     }
 }
 
@@ -263,7 +330,7 @@ private const val REPO_URL = "https://github.com/jim-spijker/repeat-call-alert"
 private fun FeedbackCard(actions: SetupActions) {
     SectionCard("Ideas welcome") {
         Text(
-            "Missing something? Feel free to ask for a feature, like always letting certain contacts ring, quiet hours or support for your phone. No coding needed. Just describe what you'd like.",
+            "Missing something? Feel free to ask for a feature, like quiet hours, vibration or support for your phone. No coding needed. Just describe what you'd like.",
             style = MaterialTheme.typography.bodyMedium,
         )
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -282,6 +349,7 @@ private fun HowItWorksCard() {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Bullet("Android lets one app screen incoming calls. This app only looks at the number and always lets the call through.")
                 Bullet("When the same number calls again within your time window while your phone is on silent, vibrate or Do Not Disturb, the app plays your ringtone on the alarm channel.")
+                Bullet("Optional: let starred contacts (favourites) or all contacts ring on their first call, or only let repeated calls from contacts ring. It works like Do Not Disturb's \"Calls from\" setting, and it also works with silent mode and the Alert Slider.")
                 Bullet("Why the alarm channel? Some phones, such as OnePlus with the Alert Slider, don't let apps switch the ringer back on. Silent mode doesn't mute alarms, so the alert is still heard.")
                 Bullet("The sound stops when you answer, decline or the caller hangs up, or after 60 seconds.")
                 Bullet("Withheld or unknown numbers can't be matched and are ignored.")

@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.jimspijker.repeatcallalert.logic.CallHistoryCodec
+import io.github.jimspijker.repeatcallalert.logic.FirstCallFrom
+import io.github.jimspijker.repeatcallalert.logic.RepeatFrom
 import io.github.jimspijker.repeatcallalert.logic.RepeatCallDetector
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,6 +26,10 @@ data class AppSettings(
     val windowMinutes: Int = 5,
     val minCalls: Int = 2,
     val alarmVolumePercent: Int = 80,
+    /** Who rings on the first call (like DND "Calls from"). */
+    val firstCallFrom: FirstCallFrom = FirstCallFrom.NOBODY,
+    /** Whose repeated calls ring. */
+    val repeatFrom: RepeatFrom = RepeatFrom.ANYONE,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -32,6 +38,8 @@ class SettingsRepository(private val context: Context) {
         val window = intPreferencesKey("window_minutes")
         val minCalls = intPreferencesKey("min_calls")
         val volume = intPreferencesKey("alarm_volume_percent")
+        val firstCall = intPreferencesKey("first_call_from")
+        val repeatFrom = intPreferencesKey("repeat_from")
     }
 
     val settings: Flow<AppSettings> = context.settingsStore.data.map { p ->
@@ -40,6 +48,8 @@ class SettingsRepository(private val context: Context) {
             windowMinutes = (p[K.window] ?: 5).coerceIn(1, 30),
             minCalls = (p[K.minCalls] ?: 2).coerceIn(2, 5),
             alarmVolumePercent = (p[K.volume] ?: 80).coerceIn(10, 100),
+            firstCallFrom = FirstCallFrom.of(p[K.firstCall] ?: 0),
+            repeatFrom = RepeatFrom.of(p[K.repeatFrom] ?: 0),
         )
     }
 
@@ -48,6 +58,8 @@ class SettingsRepository(private val context: Context) {
     suspend fun setWindowMinutes(v: Int) = context.settingsStore.edit { it[K.window] = v.coerceIn(1, 30) }
     suspend fun setMinCalls(v: Int) = context.settingsStore.edit { it[K.minCalls] = v.coerceIn(2, 5) }
     suspend fun setAlarmVolumePercent(v: Int) = context.settingsStore.edit { it[K.volume] = v.coerceIn(10, 100) }
+    suspend fun setFirstCallFrom(v: FirstCallFrom) = context.settingsStore.edit { it[K.firstCall] = v.id }
+    suspend fun setRepeatFrom(v: RepeatFrom) = context.settingsStore.edit { it[K.repeatFrom] = v.id }
 }
 
 /**

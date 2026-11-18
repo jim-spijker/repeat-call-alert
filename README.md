@@ -12,6 +12,9 @@ physical Alert Slider's silent mode overrides it. This app fills that gap.
 ## Features
 
 - Rings on the **2nd call** (configurable up to the 5th) from the same number within **5 minutes** (configurable 1–30 min)
+- **Favourites ring right away (optional):** starred contacts, or all contacts, ring on their *first* call, just like
+  Do Not Disturb's "Calls from: Starred contacts", but this also works with silent mode and the Alert Slider
+- **Limit repeated calls (optional)** to contacts or starred contacts only
 - Works with **silent mode, vibrate, Do Not Disturb, and the OnePlus Alert Slider**
 - Plays **your own ringtone**. It stops the moment you answer or decline, or when the caller hangs up (60 s at most)
 - Raises the alarm volume to a minimum you choose for that call, then restores it
@@ -60,6 +63,20 @@ Some other brands (Xiaomi, Samsung, Huawei) have similar settings. [dontkillmyap
 
 The **Activity** card in the app shows what happened for each call.
 
+## Favourites and contacts
+
+Under **Who can ring through** in the app:
+
+| Setting | Options | Example |
+|---|---|---|
+| **Ring right away for** | Nobody *(default)* · Starred · Contacts | *Starred*: your partner and parents (starred) ring on the very first call |
+| **Repeated calls from** | Anyone *(default)* · Contacts · Starred | *Contacts*: unknown numbers never ring, even when they call twice |
+
+"Starred" means the contacts you marked with a ☆ star (favourite) in your Contacts or Phone app. Android's
+Do Not Disturb uses the same list. Tap **Manage favourites** in the app to open your contacts.
+These options need the Contacts permission. The app only reads whether a number belongs to a (starred) contact,
+never names or other details.
+
 ## How it works
 
 1. The app holds Android's official [call screening role](https://developer.android.com/reference/android/telecom/CallScreeningService).
@@ -92,7 +109,7 @@ Tried it on another phone? Please [share your result](../../issues/new?template=
 ## Ideas and feature requests welcome 💡
 
 This app started as a fix for one person's problem, and it can grow into whatever is useful for you.
-**Feel free to ask for features.** For example: always letting certain contacts ring, quiet hours, vibration, a different
+**Feel free to ask for features.** For example: quiet hours, vibration, a different
 sound, or support for your phone model. Nothing is too small.
 
 - 👉 **[Suggest a feature](../../issues/new?template=feature_request.md)**

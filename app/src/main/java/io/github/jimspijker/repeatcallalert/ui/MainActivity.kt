@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
                         },
                         stopAlert = { lifecycleScope.launch { AlertService.stop(this@MainActivity, "stopped in app") } },
                         openUrl = { url -> open(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
+                        openContacts = { open(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CONTACTS)) },
                     ),
                 )
             }
@@ -116,4 +117,5 @@ class SetupActions(
     val testAlert: () -> Unit,
     val stopAlert: () -> Unit,
     val openUrl: (String) -> Unit,
+    val openContacts: () -> Unit,
 )
