@@ -93,7 +93,7 @@ fun MainScreen(settings: SettingsRepository, setup: SetupStatus, actions: SetupA
                 )
             }
 
-            StatusCard(enabled = s.enabled, ready = setup.ready) { v -> scope.launch { settings.setEnabled(v) } }
+            StatusCard(enabled = s.enabled, ready = setup.ready, activeText = activeSummary(s)) { v -> scope.launch { settings.setEnabled(v) } }
 
             if (!setup.ready || !setup.contacts || !setup.notifications) {
                 SetupCard(setup, actions)
@@ -110,8 +110,24 @@ fun MainScreen(settings: SettingsRepository, setup: SetupStatus, actions: SetupA
     }
 }
 
+/** One sentence describing who will ring through with the current settings. */
+private fun activeSummary(s: AppSettings): String {
+    val nth = when (s.minCalls) { 2 -> "second"; 3 -> "third"; 4 -> "fourth"; else -> "fifth" }
+    val first = when (s.firstCallFrom) {
+        FirstCallFrom.NOBODY -> null
+        FirstCallFrom.STARRED -> "Starred contacts ring right away."
+        FirstCallFrom.CONTACTS -> "Contacts ring right away."
+    }
+    val repeatWho = when (s.repeatFrom) {
+        RepeatFrom.ANYONE -> "the same number"
+        RepeatFrom.CONTACTS -> "the same contact"
+        RepeatFrom.STARRED -> "the same starred contact"
+    }
+    return listOfNotNull("Silent mode stays on.", first, "A $nth call from $repeatWho will ring.").joinToString(" ")
+}
+
 @Composable
-private fun StatusCard(enabled: Boolean, ready: Boolean, onToggle: (Boolean) -> Unit) {
+private fun StatusCard(enabled: Boolean, ready: Boolean, activeText: String, onToggle: (Boolean) -> Unit) {
     val (container, onContainer, title, body) = when {
         !enabled -> Quad(
             MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant,
@@ -123,7 +139,7 @@ private fun StatusCard(enabled: Boolean, ready: Boolean, onToggle: (Boolean) -> 
         )
         else -> Quad(
             MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer,
-            "Active", "Silent mode stays on. A second call from the same number will ring.",
+            "Active", activeText,
         )
     }
     Card(
